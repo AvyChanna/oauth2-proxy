@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"sync"
 
@@ -140,7 +141,7 @@ func passShaOrBcrypt(h *htpasswdMap, user, password string) (invalidEntries []st
 }
 
 // Validate checks a users password against the htpasswd entries
-func (h *htpasswdMap) Validate(user string, password string) bool {
+func (h *htpasswdMap) Validate(user string, password string, req *http.Request) bool {
 	realPassword, exists := h.users[user]
 	if !exists {
 		return false

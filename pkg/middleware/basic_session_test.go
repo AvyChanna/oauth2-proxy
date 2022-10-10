@@ -133,7 +133,7 @@ type fakeBasicValidator struct {
 	users map[string]string
 }
 
-func (f fakeBasicValidator) Validate(user, password string) bool {
+func (f fakeBasicValidator) Validate(user, password string, req *http.Request) bool {
 	if f.users == nil {
 		return false
 	}

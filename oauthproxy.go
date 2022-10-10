@@ -637,7 +637,7 @@ func (p *OAuthProxy) ManualSignIn(req *http.Request) (string, bool, int) {
 		return "", false, http.StatusBadRequest
 	}
 	// check auth
-	if p.basicAuthValidator.Validate(user, passwd) {
+	if p.basicAuthValidator.Validate(user, passwd, req) {
 		logger.PrintAuthf(user, req, logger.AuthSuccess, "Authenticated via HtpasswdFile")
 		return user, true, http.StatusOK
 	}
@@ -775,6 +775,7 @@ func (p *OAuthProxy) doOAuthStart(rw http.ResponseWriter, req *http.Request, ove
 
 	callbackRedirect := p.getOAuthRedirectURI(req)
 	loginURL := p.provider.GetLoginURL(
+		req,
 		callbackRedirect,
 		encodeState(csrf.HashOAuthState(), appRedirect),
 		csrf.HashOIDCNonce(),

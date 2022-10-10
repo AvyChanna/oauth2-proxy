@@ -613,7 +613,7 @@ func (sipTest *SignInPageTest) GetEndpoint(endpoint string) (int, string) {
 type AlwaysSuccessfulValidator struct {
 }
 
-func (AlwaysSuccessfulValidator) Validate(user, password string) bool {
+func (AlwaysSuccessfulValidator) Validate(user, password string, req *http.Request) bool {
 	return true
 }
 
@@ -659,7 +659,7 @@ func TestManualSignInStoresUserGroupsInTheSession(t *testing.T) {
 
 type ManualSignInValidator struct{}
 
-func (ManualSignInValidator) Validate(user, password string) bool {
+func (ManualSignInValidator) Validate(user, password string,req *http.Request) bool {
 	switch {
 	case user == "admin" && password == "adminPass":
 		return true

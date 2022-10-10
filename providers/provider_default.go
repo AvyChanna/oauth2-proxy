@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/apis/middleware"
@@ -35,7 +36,7 @@ var (
 // GetLoginURL with typical oauth parameters
 // codeChallenge and codeChallengeMethod are the PKCE challenge and method to append to the URL params.
 // they will be empty strings if no code challenge should be presented
-func (p *ProviderData) GetLoginURL(redirectURI, state, _ string, extraParams url.Values) string {
+func (p *ProviderData) GetLoginURL(req *http.Request, redirectURI, state, _ string, extraParams url.Values) string {
 	loginURL := makeLoginURL(p, redirectURI, state, extraParams)
 	return loginURL.String()
 }

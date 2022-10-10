@@ -41,20 +41,20 @@ var _ = Describe("HTPasswd Suite", func() {
 			})
 
 			It("accepts the correct passwords", func() {
-				Expect(htpasswd.Validate(adminUser, adminPassword)).To(BeTrue())
-				Expect(htpasswd.Validate(user1, user1Password)).To(BeTrue())
-				Expect(htpasswd.Validate(user2, user2Password)).To(BeTrue())
+				Expect(htpasswd.Validate(adminUser, adminPassword, nil)).To(BeTrue())
+				Expect(htpasswd.Validate(user1, user1Password, nil)).To(BeTrue())
+				Expect(htpasswd.Validate(user2, user2Password, nil)).To(BeTrue())
 			})
 
 			It("rejects incorrect passwords", func() {
-				Expect(htpasswd.Validate(adminUser, "asvdfda")).To(BeFalse())
-				Expect(htpasswd.Validate(user1, "BHEdgbtr")).To(BeFalse())
-				Expect(htpasswd.Validate(user2, "12345")).To(BeFalse())
+				Expect(htpasswd.Validate(adminUser, "asvdfda", nil)).To(BeFalse())
+				Expect(htpasswd.Validate(user1, "BHEdgbtr", nil)).To(BeFalse())
+				Expect(htpasswd.Validate(user2, "12345", nil)).To(BeFalse())
 			})
 
 			It("rejects a non existent user", func() {
 				// Users are case sensitive
-				Expect(htpasswd.Validate("ADMIN", adminPassword)).To(BeFalse())
+				Expect(htpasswd.Validate("ADMIN", adminPassword, nil)).To(BeFalse())
 			})
 		}
 
@@ -153,11 +153,11 @@ var _ = Describe("HTPasswd Suite", func() {
 					})
 
 					It(hu.testText, func() {
-						Expect(htpasswd.Validate(adminUser, adminPassword)).To(hu.expectedGomegaMatcher)
+						Expect(htpasswd.Validate(adminUser, adminPassword, nil)).To(hu.expectedGomegaMatcher)
 					})
 
 					It("new entry is present", func() {
-						Expect(htpasswd.Validate(user1, user1Password)).To(BeTrue())
+						Expect(htpasswd.Validate(user1, user1Password, nil)).To(BeTrue())
 					})
 				}
 

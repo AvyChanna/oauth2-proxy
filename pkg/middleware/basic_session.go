@@ -74,7 +74,7 @@ func getBasicSession(validator basic.Validator, sessionGroups []string, req *htt
 		return nil, err
 	}
 
-	if validator.Validate(user, password) {
+	if validator.Validate(user, password, req) {
 		logger.PrintAuthf(user, req, logger.AuthSuccess, "Authenticated via basic auth and HTpasswd File")
 
 		return &sessionsapi.SessionState{User: user, Groups: sessionGroups}, nil

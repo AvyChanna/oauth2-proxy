@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -273,7 +274,7 @@ func (p *LoginGovProvider) Redeem(ctx context.Context, _, code, codeVerifier str
 }
 
 // GetLoginURL overrides GetLoginURL to add login.gov parameters
-func (p *LoginGovProvider) GetLoginURL(redirectURI, state, _ string, extraParams url.Values) string {
+func (p *LoginGovProvider) GetLoginURL(req *http.Request, redirectURI, state, _ string, extraParams url.Values) string {
 	if len(extraParams["acr_values"]) == 0 {
 		acr := "http://idmanagement.gov/ns/assurance/loa/1"
 		extraParams.Add("acr_values", acr)

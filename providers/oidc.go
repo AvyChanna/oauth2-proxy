@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -34,7 +35,7 @@ func NewOIDCProvider(p *ProviderData, opts options.OIDCOptions) *OIDCProvider {
 var _ Provider = (*OIDCProvider)(nil)
 
 // GetLoginURL makes the LoginURL with optional nonce support
-func (p *OIDCProvider) GetLoginURL(redirectURI, state, nonce string, extraParams url.Values) string {
+func (p *OIDCProvider) GetLoginURL(req *http.Request, redirectURI, state, nonce string, extraParams url.Values) string {
 	if !p.SkipNonce {
 		extraParams.Add("nonce", nonce)
 	}
