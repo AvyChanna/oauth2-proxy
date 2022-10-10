@@ -3,7 +3,7 @@ package options
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 
@@ -147,7 +147,7 @@ func LoadYAML(configFileName string, into interface{}) error {
 		return errors.New("no configuration file provided")
 	}
 
-	data, err := ioutil.ReadFile(configFileName)
+	data, err := os.ReadFile(configFileName)
 	if err != nil {
 		return fmt.Errorf("unable to load config file: %w", err)
 	}

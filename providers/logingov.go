@@ -7,10 +7,10 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -124,7 +124,7 @@ func (p *LoginGovProvider) configure(opts options.LoginGovOptions) error {
 		p.JWTKey = signKey
 	case opts.JWTKeyFile != "":
 		// The JWT key is in the filesystem
-		keyData, err := ioutil.ReadFile(opts.JWTKeyFile)
+		keyData, err := os.ReadFile(opts.JWTKeyFile)
 		if err != nil {
 			return fmt.Errorf("could not read key file: %v", opts.JWTKeyFile)
 		}
