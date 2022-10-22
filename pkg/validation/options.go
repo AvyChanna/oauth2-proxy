@@ -97,6 +97,9 @@ func Validate(o *options.Options) error {
 		})
 	}
 
+	if o.UseJSONCfgFile && o.HtpasswdFile == "" {
+		msgs = append(msgs, "missing setting for jsoncfg file: htpasswd_file")
+	}
 	// Do this after ReverseProxy validation for TrustedIP coordinated checks
 	msgs = append(msgs, validateAllowlists(o)...)
 

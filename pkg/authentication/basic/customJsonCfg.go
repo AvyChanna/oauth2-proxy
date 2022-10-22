@@ -2,9 +2,12 @@ package basic
 
 import (
 	"crypto/subtle"
-	"encoding/hex"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/oauth2-proxy/oauth2-proxy/v7/pkg/logger"
@@ -13,8 +16,10 @@ import (
 )
 
 type userPassword struct {
-	hash []byte
-	salt []byte
+	hash    []byte
+	salt    []byte
+	HashB64 string `json:"hash"`
+	SaltB64 string `json:"salt"`
 }
 
 type params struct {
@@ -26,17 +31,19 @@ type params struct {
 }
 
 type userCfg struct {
-	pwd   userPassword
-	group string
+	Pwd   userPassword
+	Group string
 }
 
+type permsObj string
+
 type groupCfg struct {
-	perms []string
+	Perms []permsObj
 }
 
 type jsonCfgMap struct {
-	users  map[string]userCfg
-	groups map[string]groupCfg
+	Users  map[string]userCfg
+	Groups map[string]groupCfg
 	rwm    sync.RWMutex
 }
 
@@ -48,21 +55,16 @@ var argonParams = &params{
 	keyLength:  32,
 }
 
-// NewHTPasswdValidator constructs an httpasswd based validator from the file
-// at the path given.
-func NewJsonCfgValidator(path string) (Validator, error) {
-	res := &jsonCfgMap{
-		users:  make(map[string]userCfg),
-		groups: make(map[string]groupCfg),
-	}
-	if err := res.loadJsonCfgFile(path); err != nil {
+func NewJSONCfgValidator(path string) (Validator, error) {
+	res := &jsonCfgMap{}
+	if err := res.loadJSONCfgFile(path); err != nil {
 		return nil, fmt.Errorf("could not load jsonCfg file: %v", err)
 	}
 
 	if err := watcher.WatchFileForUpdates(path, nil, func() {
-		err := res.loadJsonCfgFile(path)
+		err := res.loadJSONCfgFile(path)
 		if err != nil {
-			logger.Errorf("%v: no changes were made to the current jsonCfg map", err)
+			logger.Errorf("%v: no changes were applied to the current jsonCfg map", err)
 		}
 	}); err != nil {
 		return nil, fmt.Errorf("could not watch jsonCfg file: %v", err)
@@ -70,35 +72,69 @@ func NewJsonCfgValidator(path string) (Validator, error) {
 	return res, nil
 }
 
-func getDummyUser() userCfg {
-	// TODO: remove this
-	dummyHash, _ := hex.DecodeString("1a642bb57085acfce19c46b85d6d51a62b6f31a13e31916dc2cc002b54341407")
-	return userCfg{
-		pwd: userPassword{
-			hash: dummyHash,
-			salt: []byte("0123456789abcdef"),
-		},
+func (h *jsonCfgMap) loadJSONCfgFile(filename string) error {
+	content, err := os.ReadFile(filename) // #nosec G304
+	if err != nil {
+		return fmt.Errorf("could not open jsonCfg file: %v", err)
 	}
-}
-func (h *jsonCfgMap) loadJsonCfgFile(path string) error {
-	// TODO: implement this. Currently dummy code for testing
-	newJsonCfgMap := &jsonCfgMap{
-		users:  make(map[string]userCfg),
-		groups: make(map[string]groupCfg),
+	rr := &jsonCfgMap{}
+	if err := json.Unmarshal(content, &rr); err != nil {
+		return fmt.Errorf("error while JSON Unmarshal: %v", err)
 	}
-	newJsonCfgMap.users["h2g2"] = getDummyUser()
+
+	if err := processJSONCfgData(rr); err != nil {
+		return err
+	}
+
+	h.rwm.Lock()
+	h.Users = rr.Users
+	h.Groups = rr.Groups
+	h.rwm.Unlock()
+
 	return nil
 }
 
-// Validate checks a users password against the htpasswd entries
+func processJSONCfgData(rr *jsonCfgMap) error {
+	if len(rr.Users) == 0 {
+		return errors.New("no user defined in JsonCfg")
+	}
+
+	if len(rr.Groups) == 0 {
+		return errors.New("no group defined in JsonCfg")
+	}
+
+	for _, usr := range rr.Users {
+		grp := usr.Group
+		if _, exists := rr.Groups[grp]; !exists {
+			return fmt.Errorf("group %s for user %s is not defined in JsonCfg", grp, usr)
+		}
+
+		decodedHash, err := base64.StdEncoding.DecodeString(usr.Pwd.HashB64)
+		if err != nil {
+			return fmt.Errorf("hash decode error for user %s in JsonCfg", usr)
+		}
+		usr.Pwd.hash = decodedHash
+		// usr.Pwd.HashB64 = ""
+
+		decodedSalt, err := base64.StdEncoding.DecodeString(usr.Pwd.SaltB64)
+		if err != nil {
+			return fmt.Errorf("salt decode error for user %s in JsonCfg", usr)
+		}
+		usr.Pwd.salt = decodedSalt
+		// usr.Pwd.SaltB64 = ""
+	}
+
+	return nil
+}
+
 func (h *jsonCfgMap) Validate(user string, password string, req *http.Request) bool {
-	userData, exists := h.users[user]
+	userData, exists := h.Users[user]
 	if !exists {
 		return false
 	}
 	passwordHash := argon2.IDKey(
 		[]byte(password),
-		userData.pwd.salt,
+		userData.Pwd.salt,
 		argonParams.time,
 		argonParams.memory,
 		argonParams.threads,
@@ -106,7 +142,18 @@ func (h *jsonCfgMap) Validate(user string, password string, req *http.Request) b
 	)
 
 	passAtZero := 2 // Authn + Authz
-	passAtZero -= subtle.ConstantTimeCompare(passwordHash, userData.pwd.hash)
-	// TODO: Authz
+	passAtZero -= subtle.ConstantTimeCompare(passwordHash, userData.Pwd.hash)
+
+	group := userData.Group
+	groupData, exists := h.Groups[group]
+	if !exists {
+		logger.Errorf("group %s not found for user %s", group, user)
+		return false
+	}
+
+	for _, perm := range groupData.Perms {
+		fmt.Printf("%s\n", perm)
+		// TODO: match perms
+	}
 	return passAtZero == 0
 }

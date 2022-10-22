@@ -658,7 +658,7 @@ func TestManualSignInStoresUserGroupsInTheSession(t *testing.T) {
 
 type ManualSignInValidator struct{}
 
-func (ManualSignInValidator) Validate(user, password string,req *http.Request) bool {
+func (ManualSignInValidator) Validate(user, password string, req *http.Request) bool {
 	switch {
 	case user == "admin" && password == "adminPass":
 		return true

@@ -32,6 +32,7 @@ type Options struct {
 	WhitelistDomains        []string `flag:"whitelist-domain" cfg:"whitelist_domains"`
 	HtpasswdFile            string   `flag:"htpasswd-file" cfg:"htpasswd_file"`
 	HtpasswdUserGroups      []string `flag:"htpasswd-user-group" cfg:"htpasswd_user_groups"`
+	UseJSONCfgFile          bool     `flag:"use-jsoncfg-file" cfg:"use_jsoncfg_file"`
 
 	Cookie    Cookie         `cfg:",squash"`
 	Session   SessionOptions `cfg:",squash"`
@@ -128,6 +129,7 @@ func NewFlagSet() *pflag.FlagSet {
 	flagSet.StringSlice("email-domain", []string{}, "authenticate emails with the specified domain (may be given multiple times). Use * to authenticate any email")
 	flagSet.StringSlice("whitelist-domain", []string{}, "allowed domains for redirection after authentication. Prefix domain with a . or a *. to allow subdomains (eg .example.com, *.example.com)")
 	flagSet.String("authenticated-emails-file", "", "authenticate against emails via file (one per line)")
+	flagSet.Bool("use-jsoncfg-file", false, "use new JsonCfg format for htpasswd config")
 	flagSet.String("htpasswd-file", "", "additionally authenticate against a htpasswd file. Entries must be created with \"htpasswd -B\" for bcrypt encryption")
 	flagSet.StringSlice("htpasswd-user-group", []string{}, "the groups to be set on sessions for htpasswd users (may be given multiple times)")
 	flagSet.String("proxy-prefix", "/oauth2", "the url root path that this proxy should be nested under (e.g. /<oauth2>/sign_in)")

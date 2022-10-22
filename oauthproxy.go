@@ -115,11 +115,16 @@ func NewOAuthProxy(opts *options.Options, validator func(string) bool) (*OAuthPr
 
 	var basicAuthValidator basic.Validator
 	if opts.HtpasswdFile != "" {
-		logger.Printf("using htpasswd file: %s", opts.HtpasswdFile)
 		var err error
-		basicAuthValidator, err = basic.NewHTPasswdValidator(opts.HtpasswdFile)
+		if opts.UseJSONCfgFile {
+			logger.Printf("using jsonCfg file: %s", opts.HtpasswdFile)
+			basicAuthValidator, err = basic.NewJSONCfgValidator(opts.HtpasswdFile)
+		} else {
+			logger.Printf("using htpasswd file: %s", opts.HtpasswdFile)
+			basicAuthValidator, err = basic.NewHTPasswdValidator(opts.HtpasswdFile)
+		}
 		if err != nil {
-			return nil, fmt.Errorf("could not validate htpasswd: %v", err)
+			return nil, fmt.Errorf("could not validate file: %v", err)
 		}
 	}
 
