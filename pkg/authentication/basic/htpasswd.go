@@ -142,6 +142,8 @@ func passShaOrBcrypt(h *htpasswdMap, user, password string) (invalidEntries []st
 
 // Validate checks a users password against the htpasswd entries
 func (h *htpasswdMap) Validate(user string, password string, req *http.Request) bool {
+	h.rwm.RLock()
+	defer h.rwm.RUnlock()
 	realPassword, exists := h.users[user]
 	if !exists {
 		return false
